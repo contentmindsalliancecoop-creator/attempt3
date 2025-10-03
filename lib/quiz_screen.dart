@@ -2,7 +2,48 @@
 
 import 'package:flutter/material.dart';
 import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
+// En quiz_screen.dart, importa el paquete
+import 'package:shared_preferences/shared_preferences.dart';
+// En quiz_screen.dart, importa el paquete
+import 'package:audioplayers/audioplayers.dart';
 
+// Dentro de la clase _QuizScreenState, añade el reproductor
+final _audioPlayer = AudioPlayer();
+
+// Dentro de la función _answerQuestion
+void _answerQuestion(int score) {
+  _totalScore += score;
+
+  if (widget.settings.soundEffectsEnabled) {
+    if (score > 0) {
+      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+    } else {
+      _audioPlayer.play(AssetSource('audio/incorrect.mp3'));
+    }
+  }
+  // ... el resto de la función se queda igual
+}
+
+// Dentro de la clase _QuizScreenState, añade esta función
+Future<void> _saveHighScore() async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'highScore_${widget.level.name}'; // ej: highScore_basic
+  
+  final currentHighScore = prefs.getInt(key) ?? 0;
+  if (_totalScore > currentHighScore) {
+    await prefs.setInt(key, _totalScore);
+  }
+}
+
+// Llama a esta función cuando el quiz termine.
+// Dentro del método buildResult()
+Widget buildResult() {
+  // Llama a la función para guardar el puntaje justo al construir el resultado
+  _saveHighScore(); 
+
+  final bool isWinner = _totalScore >= (_currentQuestions.length * 0.7);
+  // ... el resto del widget se queda igual
+}
 // Definimos un enum para los niveles de dificultad.
 enum QuizLevel { basic, intermediate, advanced }
 

@@ -6,8 +6,15 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
+dependencies:
+  # ... otros paquetes
+  audioplayers: ^6.0.0
   flutter:
     sdk: flutter
+    shared_preferences: ^2.2.3 
+    uses-material-design: true
+    assets:
+    - assets/audio/ # <-- Añade esta línea
 
   # --- librerías que usa updater.dart ---
   http: ^1.2.2

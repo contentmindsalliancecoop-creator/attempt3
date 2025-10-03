@@ -2,7 +2,22 @@
 
 import 'package:flutter/material.dart';
 import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
+// En settings_screen.dart, importa el paquete
+import 'package:shared_preferences/shared_preferences.dart';
 
+// Dentro de la función _showResetConfirmationDialog, en el onPressed de "Reiniciar"
+onPressed: () async { // <-- Haz la función async
+  // Lógica para borrar los puntajes guardados
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('highScore_basic');
+  await prefs.remove('highScore_intermediate');
+  await prefs.remove('highScore_advanced');
+
+  Navigator.of(ctx).pop();
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Progreso reiniciado')),
+  );
+},
 class SettingsScreen extends StatefulWidget {
   final SettingsData currentSettings;
   final Function(SettingsData) onSettingsChanged;

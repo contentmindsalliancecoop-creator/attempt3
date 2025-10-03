@@ -52,30 +52,34 @@ class _MathQuizAppState extends State<MathQuizApp> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Math Quiz Demo',
-      // 5. El tema ahora se controla por el estado de los ajustes
-      themeMode: _settings.themeMode, 
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.cyan,
-          brightness: Brightness.dark,
+  // En main.dart, dentro del build de _MathQuizAppState
+
+@override
+Widget build(BuildContext context) {
+  return MaterialApp(
+    title: 'Math Quiz Demo',
+    themeMode: _settings.themeMode,
+    theme: ThemeData( // <-- TEMA CLARO
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
+      // Añadimos un tema específico para los botones elevados en modo claro
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white, // Color del texto y el ícono
+          backgroundColor: Colors.cyan[700], // Un color de fondo oscuro para contraste
         ),
       ),
-      // 6. Pasamos los ajustes y la función para actualizarlos a la HomePage
-      home: HomePage(
-        settings: _settings,
-        onSettingsChanged: _updateSettings,
+    ),
+    darkTheme: ThemeData( // <-- TEMA OSCURO
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.cyan,
+        brightness: Brightness.dark,
       ),
-    );
-  }
+    ),
+    // ... el resto se queda igual
+  );
+}
 }
