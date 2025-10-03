@@ -1,15 +1,21 @@
 // quiz_screen.dart
 
 import 'package:flutter/material.dart';
+import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
 
 // Definimos un enum para los niveles de dificultad.
-// Esto hace el código más limpio y seguro.
 enum QuizLevel { basic, intermediate, advanced }
 
 class QuizScreen extends StatefulWidget {
-  // Ahora la pantalla recibe el nivel como parámetro.
+  // Ahora la pantalla recibe el nivel y los ajustes como parámetros.
   final QuizLevel level;
-  const QuizScreen({super.key, required this.level});
+  final SettingsData settings;
+
+  const QuizScreen({
+    super.key,
+    required this.level,
+    required this.settings,
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -81,13 +87,20 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    // Al iniciar, seleccionamos el set de preguntas correcto
-    // basado en el nivel que se recibió.
     _currentQuestions = _allQuestions[widget.level]!;
   }
 
   void _answerQuestion(int score) {
     _totalScore += score;
+
+    // Aquí es donde harías funcionales los ajustes
+    if (widget.settings.vibrationsEnabled) {
+      // TODO: Añadir código para hacer vibrar el teléfono
+    }
+    if (widget.settings.soundEffectsEnabled) {
+      // TODO: Añadir código para reproducir un sonido
+    }
+
     setState(() {
       _questionIndex++;
     });
@@ -114,15 +127,17 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // Widget para mostrar las preguntas (sin cambios significativos)
   Widget buildQuiz() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          _currentQuestions[_questionIndex]['questionText'] as String,
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 32),
-          textAlign: TextAlign.center,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            _currentQuestions[_questionIndex]['questionText'] as String,
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 32),
+            textAlign: TextAlign.center,
+          ),
         ),
         const SizedBox(height: 40),
         ...(_currentQuestions[_questionIndex]['answers'] as List<Map<String, Object>>)
@@ -145,9 +160,8 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // Widget para mostrar el resultado final (sin cambios significativos)
   Widget buildResult() {
-    final bool isWinner = _totalScore >= (_currentQuestions.length * 0.7); // Gana con 70%
+    final bool isWinner = _totalScore >= (_currentQuestions.length * 0.7);
 
     return Center(
       child: Column(

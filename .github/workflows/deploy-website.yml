@@ -1,6 +1,6 @@
 name: Deploy Website to Firebase Hosting
 
-# Este es el disparador: se ejecuta cuando un release es publicado.
+# El disparador: se ejecuta cuando un release es publicado.
 on:
   release:
     types: [published]
@@ -9,28 +9,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Clona tu repositorio para tener acceso a tus archivos (como index.html)
+      # 1. Clona tu repositorio para tener acceso a los archivos.
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 2. Reemplaza el enlace en index.html con el del nuevo release
+      # 2. Reemplaza el placeholder en index.html con el enlace del nuevo release.
       - name: Update download link in index.html
         run: |
-          # Esta línea usa una herramienta (sed) para buscar y reemplazar el href del botón.
-          # Toma la URL del primer archivo adjunto (.apk) del release que activó el workflow.
-          sed -i 's|href="https://github.com/[^"]*"|href="${{ github.event.release.assets[0].browser_download_url }}"|' public/index.html
+          # Este comando busca el texto exacto "--APK-DOWNLOAD-LINK--" y lo reemplaza
+          # con la URL del primer archivo (.apk) del release que activó este workflow.
+          sed -i 's|--APK-DOWNLOAD-LINK--|${{ github.event.release.assets[0].browser_download_url }}|' public/index.html
       
-      # 3. Instala Node.js, necesario para instalar las herramientas de Firebase
+      # 3. Instala Node.js, necesario para las herramientas de Firebase.
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      # 4. Instala las herramientas de Firebase
+      # 4. Instala las herramientas de Firebase.
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # 5. Despliega a Firebase Hosting
+      # 5. Despliega a Firebase Hosting usando el Token que guardaste.
       - name: Deploy to Firebase
-        run: |
-          firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
+        run: firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
