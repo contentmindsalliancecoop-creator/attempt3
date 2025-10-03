@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curso de Matemáticas Avanzadas</title>
+    <title>Misión Matemática</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,24 +12,59 @@
 <body>
 
     <main class="container">
-    <div class="card">
-        <div class="icon-container">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-cpu"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-        </div>
-        
-        <h1>Misión Matemática: Tu Reto Diario</h1>
+        <div class="card">
+            <div class="icon-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-cpu"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            </div>
+            
+            <h1>Misión Matemática: Tu Reto Diario</h1>
 
-        <p>Pon a prueba tus habilidades con quizzes de nivel básico, intermedio y avanzado. ¡Perfecto para aprender, practicar y dominar los números a tu propio ritmo!</p>
-        
-        <a href="--APK-DOWNLOAD-LINK--" class="download-button" download>
-    Descargar APK
-</a>
-        
-        <div class="footer-note">
-            <p>Última Versión | Para Android</p>
+            <p>Pon a prueba tus habilidades con quizzes de nivel básico, intermedio y avanzado. ¡La última versión siempre disponible aquí!</p>
+            
+            <a id="download-button" href="#" class="download-button" download>
+                Cargando descarga...
+            </a>
+            
+            <div class="footer-note">
+                <p id="version-text">Buscando última versión...</p>
+            </div>
         </div>
-    </div>
-</main>
+    </main>
 
+    <script>
+        // 1. Configura tu usuario y repositorio de GitHub
+        const owner = 'contentmindsalliancecoop-creator';
+        const repo = 'attempt3';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+
+        // 2. Elementos de la página que vamos a modificar
+        const downloadButton = document.getElementById('download-button');
+        const versionText = document.getElementById('version-text');
+
+        // 3. Hacemos la petición a la API de GitHub
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                // Buscamos el archivo que termine en .apk dentro de los "assets"
+                const apkAsset = data.assets.find(asset => asset.name.endsWith('.apk'));
+
+                if (apkAsset) {
+                    // Si lo encontramos, actualizamos el botón y el texto
+                    downloadButton.href = apkAsset.browser_download_url;
+                    downloadButton.textContent = 'Descargar APK';
+                    versionText.textContent = `Versión ${data.tag_name} | Para Android`;
+                } else {
+                    // Si no hay un APK en el último release, mostramos un error
+                    downloadButton.textContent = 'No disponible';
+                    versionText.textContent = 'No se encontró un archivo APK en el último lanzamiento.';
+                }
+            })
+            .catch(error => {
+                // Si hay un error de red, lo indicamos
+                console.error('Error al buscar el release:', error);
+                downloadButton.textContent = 'Error al cargar';
+                versionText.textContent = 'No se pudo conectar con GitHub.';
+            });
+    </script>
 </body>
 </html>
