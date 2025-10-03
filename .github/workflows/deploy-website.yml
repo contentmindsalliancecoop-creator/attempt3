@@ -14,12 +14,25 @@ jobs:
         uses: actions/checkout@v4
 
       # 2. Reemplaza el placeholder en index.html con el enlace del nuevo release.
-      - name: Update download link in index.html
-        run: |
-          # Este comando busca el texto exacto "--APK-DOWNLOAD-LINK--" y lo reemplaza
-          # con la URL del primer archivo (.apk) del release que activó este workflow.
-          sed -i 's|--APK-DOWNLOAD-LINK--|${{ github.event.release.assets[0].browser_download_url }}|' public/index.html
       
+      - name: Get APK URL
+        id: get_apk
+        run: |
+          url=$(echo '${{ toJson(github.event.release.assets) }}' \
+            | jq -r '.[] | select(.name | endswith(".apk")) | .browser_download_url')
+          if [ -z "$url" ] || [ "$url" = "null" ]; then
+            echo "No se encontró un asset .apk en este release." >&2
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # 2) Reemplazar el placeholder en index.html
+      - name: Update index.html with APK URL
+        run: |
+          sed -i "s|--APK-DOWNLOAD-LINK--|${{ steps.get_apk.outputs.url }}|" public/index.html
+          echo "Reemplazado por: ${{ steps.get_apk.outputs.url }}"
+          grep -n "APK" -n public/index.html || true
+
       # 3. Instala Node.js, necesario para las herramientas de Firebase.
       - name: Setup Node.js
         uses: actions/setup-node@v4
