@@ -1,0 +1,85 @@
+/* Estilos generales */
+:root {
+    --primary-color: #4a90e2; /* Un azul moderno */
+    --background-color: #f0f4f8; /* Un gris muy claro */
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --light-text-color: #777777;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* Contenedor principal */
+.container {
+    padding: 20px;
+}
+
+/* Tarjeta de descarga */
+.card {
+    background-color: var(--card-background);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    padding: 40px;
+    max-width: 400px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+}
+
+.icon-container {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+p {
+    color: var(--light-text-color);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Botón de descarga */
+.download-button {
+    display: inline-block;
+    background: linear-gradient(45deg, #4a90e2, #50e3c2); /* Gradiente atractivo */
+    color: white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+}
+
+.download-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.5);
+}
+
+/* Nota al pie */
+.footer-note {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: #aaaaaa;
+}
