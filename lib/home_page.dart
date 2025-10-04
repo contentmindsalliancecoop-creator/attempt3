@@ -1,14 +1,13 @@
-// home_page.dart
+// lib/home_page.dart (Versión Corregida y Unificada)
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'quiz_screen.dart';
-import 'updater.dart';
 import 'settings_screen.dart';
-import 'main.dart'; // Para tener acceso a SettingsData
+import 'updater.dart';
+import 'main.dart'; // Para SettingsData
 
 class HomePage extends StatefulWidget {
-  // Recibimos los ajustes y la función de callback desde main.dart
   final SettingsData settings;
   final Function(SettingsData) onSettingsChanged;
 
@@ -23,24 +22,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Mapa para guardar los puntajes máximos
+  // Mapa para guardar los puntajes máximos de cada nivel
   Map<QuizLevel, int> highScores = {
     QuizLevel.basic: 0,
     QuizLevel.intermediate: 0,
     QuizLevel.advanced: 0,
   };
 
+  // Al iniciar la pantalla, cargamos los puntajes guardados
   @override
   void initState() {
     super.initState();
-    // Cargamos los puntajes guardados cuando la pantalla se inicia
     _loadHighScores();
   }
 
-  // Función asíncrona para leer los datos del dispositivo
+  // Función para cargar los puntajes desde SharedPreferences
   Future<void> _loadHighScores() async {
     final prefs = await SharedPreferences.getInstance();
-    // Actualizamos el estado para que la UI se redibuje con los puntajes
+    // setState actualiza la UI con los nuevos puntajes
     setState(() {
       highScores[QuizLevel.basic] = prefs.getInt('highScore_basic') ?? 0;
       highScores[QuizLevel.intermediate] = prefs.getInt('highScore_intermediate') ?? 0;
@@ -48,14 +47,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // Función para navegar a la pantalla del quiz
+  // Función para iniciar un quiz
   void _startQuiz(BuildContext context, QuizLevel level) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuizScreen(level: level, settings: widget.settings),
       ),
-      // Cuando volvemos del quiz, volvemos a cargar los puntajes por si hay uno nuevo
+      // Cuando volvemos de la pantalla del quiz, recargamos los puntajes
     ).then((_) => _loadHighScores());
   }
 
@@ -73,12 +72,13 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'Misión Matemática',
                 style: Theme.of(context).textTheme.displayMedium,
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
               Text('Selecciona tu nivel', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 20),
 
-              // Botones de Nivel con subtítulo para el puntaje
+              // Botones de menú que ahora muestran el puntaje
               _MenuButton(
                 text: 'Básico',
                 subtitle: 'Puntaje Máximo: ${highScores[QuizLevel.basic]}',
@@ -104,7 +104,6 @@ class _HomePageState extends State<HomePage> {
               const Divider(),
               const SizedBox(height: 20),
 
-              // Botones de Ajustes y Actualizaciones
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -141,7 +140,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Widget de botón personalizado (definido una sola vez)
+// Widget de botón personalizado (SOLO UNO)
 class _MenuButton extends StatelessWidget {
   final String text;
   final String? subtitle; // Subtítulo opcional para el puntaje
@@ -157,34 +156,31 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Usamos un tema específico para el botón para asegurar que el texto sea visible
+    final buttonStyle = ElevatedButton.styleFrom(
+      minimumSize: const Size(280, 60),
+      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      backgroundColor: Theme.of(context).colorScheme.surfaceVariant, // Color de fondo adaptable
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant, // Color de texto adaptable
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+    );
+
     return ElevatedButton.icon(
-      icon: Icon(icon),
-      label: Column( // Usamos una Column para poner el texto y el subtítulo
+      icon: Icon(icon, size: 28),
+      style: buttonStyle,
+      label: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(text),
           if (subtitle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 2.0),
-              child: Text(
-                subtitle!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white70,
-                ),
-              ),
+            Text(
+              subtitle!,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
         ],
-      ),
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(280, 65), // Un poco más alto para el subtítulo
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        backgroundColor: Theme.of(context).cardColor,
-        foregroundColor: Colors.white, // Color unificado para tema claro/oscuro
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
       ),
       onPressed: onPressed,
     );

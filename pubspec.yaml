@@ -7,19 +7,18 @@ environment:
   sdk: '>=3.3.0 <4.0.0'
 
 # --- SECCIÓN DE DEPENDENCIAS ---
-# Todos los paquetes van aquí, cada uno en su propia línea.
 dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.2 # Es bueno tenerlo por si acaso.
+  cupertino_icons: ^1.0.2
   audioplayers: ^6.0.0
   shared_preferences: ^2.2.3
   http: ^1.2.2
   package_info_plus: ^8.0.0
-  dio: ^5.6.0
   path_provider: ^2.1.4
-  open_filex: ^4.4.0
+  dio: ^5.4.3+1
+  open_file_plus: ^3.4.1 # <-- Este es el correcto que estamos usando
 
 dev_dependencies:
   flutter_test:
@@ -27,7 +26,6 @@ dev_dependencies:
   flutter_lints: ^3.0.0
 
 # --- SECCIÓN DE FLUTTER ---
-# Configuraciones específicas de Flutter van aquí, completamente separadas de dependencies.
 flutter:
   uses-material-design: true
 
