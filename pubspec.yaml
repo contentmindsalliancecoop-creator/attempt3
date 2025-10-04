@@ -1,22 +1,20 @@
 name: attempt3
 description: Attempt 3 app
-publish_to: "none"
+publish_to: 'none'
+version: 1.0.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: '>=3.3.0 <4.0.0'
 
+# --- SECCIÓN DE DEPENDENCIAS ---
+# Todos los paquetes van aquí, cada uno en su propia línea.
 dependencies:
-dependencies:
-  # ... otros paquetes
-  audioplayers: ^6.0.0
   flutter:
     sdk: flutter
-    shared_preferences: ^2.2.3 
-    uses-material-design: true
-    assets:
-    - assets/audio/ # <-- Añade esta línea
 
-  # --- librerías que usa updater.dart ---
+  cupertino_icons: ^1.0.2 # Es bueno tenerlo por si acaso.
+  audioplayers: ^6.0.0
+  shared_preferences: ^2.2.3
   http: ^1.2.2
   package_info_plus: ^8.0.0
   dio: ^5.6.0
@@ -26,6 +24,12 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^3.0.0
 
+# --- SECCIÓN DE FLUTTER ---
+# Configuraciones específicas de Flutter van aquí, completamente separadas de dependencies.
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/audio/

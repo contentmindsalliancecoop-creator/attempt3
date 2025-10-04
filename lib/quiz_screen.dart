@@ -1,54 +1,13 @@
 // quiz_screen.dart
 
 import 'package:flutter/material.dart';
-import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
-// En quiz_screen.dart, importa el paquete
 import 'package:shared_preferences/shared_preferences.dart';
-// En quiz_screen.dart, importa el paquete
 import 'package:audioplayers/audioplayers.dart';
+import 'main.dart'; // Para tener acceso a la clase SettingsData
 
-// Dentro de la clase _QuizScreenState, añade el reproductor
-final _audioPlayer = AudioPlayer();
-
-// Dentro de la función _answerQuestion
-void _answerQuestion(int score) {
-  _totalScore += score;
-
-  if (widget.settings.soundEffectsEnabled) {
-    if (score > 0) {
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
-    } else {
-      _audioPlayer.play(AssetSource('audio/incorrect.mp3'));
-    }
-  }
-  // ... el resto de la función se queda igual
-}
-
-// Dentro de la clase _QuizScreenState, añade esta función
-Future<void> _saveHighScore() async {
-  final prefs = await SharedPreferences.getInstance();
-  final key = 'highScore_${widget.level.name}'; // ej: highScore_basic
-  
-  final currentHighScore = prefs.getInt(key) ?? 0;
-  if (_totalScore > currentHighScore) {
-    await prefs.setInt(key, _totalScore);
-  }
-}
-
-// Llama a esta función cuando el quiz termine.
-// Dentro del método buildResult()
-Widget buildResult() {
-  // Llama a la función para guardar el puntaje justo al construir el resultado
-  _saveHighScore(); 
-
-  final bool isWinner = _totalScore >= (_currentQuestions.length * 0.7);
-  // ... el resto del widget se queda igual
-}
-// Definimos un enum para los niveles de dificultad.
 enum QuizLevel { basic, intermediate, advanced }
 
 class QuizScreen extends StatefulWidget {
-  // Ahora la pantalla recibe el nivel y los ajustes como parámetros.
   final QuizLevel level;
   final SettingsData settings;
 
@@ -63,67 +22,27 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  // Un mapa que contiene todas las preguntas, organizadas por nivel.
-  static const Map<QuizLevel, List<Map<String, Object>>> _allQuestions = {
-    QuizLevel.basic: [
-      {
-        'questionText': '¿Cuánto es 5 + 3?',
-        'answers': [
-          {'text': '7', 'score': 0},
-          {'text': '8', 'score': 1},
-          {'text': '6', 'score': 0},
-        ],
-      },
-      {
-        'questionText': '¿Cuánto es 10 - 4?',
-        'answers': [
-          {'text': '5', 'score': 0},
-          {'text': '7', 'score': 0},
-          {'text': '6', 'score': 1},
-        ],
-      },
-    ],
-    QuizLevel.intermediate: [
-      {
-        'questionText': '¿Cuánto es 12 * 4?',
-        'answers': [
-          {'text': '48', 'score': 1},
-          {'text': '44', 'score': 0},
-          {'text': '52', 'score': 0},
-        ],
-      },
-      {
-        'questionText': '¿Cuánto es 100 / 5?',
-        'answers': [
-          {'text': '25', 'score': 0},
-          {'text': '20', 'score': 1},
-          {'text': '15', 'score': 0},
-        ],
-      },
-    ],
-    QuizLevel.advanced: [
-      {
-        'questionText': '¿Cuál es la raíz cuadrada de 81?',
-        'answers': [
-          {'text': '8', 'score': 0},
-          {'text': '9', 'score': 1},
-          {'text': '7', 'score': 0},
-        ],
-      },
-      {
-        'questionText': '¿Cuánto es 3 elevado a la 3ra potencia?',
-        'answers': [
-          {'text': '9', 'score': 0},
-          {'text': '6', 'score': 0},
-          {'text': '27', 'score': 1},
-        ],
-      },
-    ],
-  };
+  // --- VARIABLES Y MÉTODOS VAN AQUÍ, DENTRO DE LA CLASE STATE ---
 
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late List<Map<String, Object>> _currentQuestions;
   int _questionIndex = 0;
   int _totalScore = 0;
+
+  static const Map<QuizLevel, List<Map<String, Object>>> _allQuestions = {
+    QuizLevel.basic: [
+      {'questionText': '¿Cuánto es 5 + 3?', 'answers': [{'text': '7', 'score': 0}, {'text': '8', 'score': 1}, {'text': '6', 'score': 0}]},
+      {'questionText': '¿Cuánto es 10 - 4?', 'answers': [{'text': '5', 'score': 0}, {'text': '7', 'score': 0}, {'text': '6', 'score': 1}]},
+    ],
+    QuizLevel.intermediate: [
+      {'questionText': '¿Cuánto es 12 * 4?', 'answers': [{'text': '48', 'score': 1}, {'text': '44', 'score': 0}, {'text': '52', 'score': 0}]},
+      {'questionText': '¿Cuánto es 100 / 5?', 'answers': [{'text': '25', 'score': 0}, {'text': '20', 'score': 1}, {'text': '15', 'score': 0}]},
+    ],
+    QuizLevel.advanced: [
+      {'questionText': '¿Cuál es la raíz cuadrada de 81?', 'answers': [{'text': '8', 'score': 0}, {'text': '9', 'score': 1}, {'text': '7', 'score': 0}]},
+      {'questionText': '¿Cuánto es 3 elevado a la 3ra potencia?', 'answers': [{'text': '9', 'score': 0}, {'text': '6', 'score': 0}, {'text': '27', 'score': 1}]},
+    ],
+  };
 
   @override
   void initState() {
@@ -134,12 +53,16 @@ class _QuizScreenState extends State<QuizScreen> {
   void _answerQuestion(int score) {
     _totalScore += score;
 
-    // Aquí es donde harías funcionales los ajustes
-    if (widget.settings.vibrationsEnabled) {
-      // TODO: Añadir código para hacer vibrar el teléfono
-    }
     if (widget.settings.soundEffectsEnabled) {
-      // TODO: Añadir código para reproducir un sonido
+      if (score > 0) {
+        _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      } else {
+        _audioPlayer.play(AssetSource('audio/incorrect.mp3'));
+      }
+    }
+    // Lógica de vibración (requiere un paquete extra, por ahora es un placeholder)
+    if (widget.settings.vibrationsEnabled) {
+      // TODO: Implementar vibración
     }
 
     setState(() {
@@ -154,6 +77,16 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  Future<void> _saveHighScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'highScore_${widget.level.name}';
+    
+    final currentHighScore = prefs.getInt(key) ?? 0;
+    if (_totalScore > currentHighScore) {
+      await prefs.setInt(key, _totalScore);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,12 +96,12 @@ class _QuizScreenState extends State<QuizScreen> {
         elevation: 0,
       ),
       body: _questionIndex < _currentQuestions.length
-          ? buildQuiz()
-          : buildResult(),
+          ? _buildQuiz()
+          : _buildResult(),
     );
   }
 
-  Widget buildQuiz() {
+  Widget _buildQuiz() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -201,7 +134,8 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget buildResult() {
+  Widget _buildResult() {
+    _saveHighScore(); // Guardamos el puntaje al mostrar el resultado
     final bool isWinner = _totalScore >= (_currentQuestions.length * 0.7);
 
     return Center(

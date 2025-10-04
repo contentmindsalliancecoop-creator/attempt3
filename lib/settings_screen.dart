@@ -1,23 +1,9 @@
 // settings_screen.dart
 
 import 'package:flutter/material.dart';
-import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
-// En settings_screen.dart, importa el paquete
 import 'package:shared_preferences/shared_preferences.dart';
+import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
 
-// Dentro de la función _showResetConfirmationDialog, en el onPressed de "Reiniciar"
-onPressed: () async { // <-- Haz la función async
-  // Lógica para borrar los puntajes guardados
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove('highScore_basic');
-  await prefs.remove('highScore_intermediate');
-  await prefs.remove('highScore_advanced');
-
-  Navigator.of(ctx).pop();
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Progreso reiniciado')),
-  );
-},
 class SettingsScreen extends StatefulWidget {
   final SettingsData currentSettings;
   final Function(SettingsData) onSettingsChanged;
@@ -38,10 +24,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Creamos una copia temporal para manipularla sin afectar el estado original hasta guardar
     _tempSettings = widget.currentSettings.copyWith();
   }
 
+  // Este método ahora contiene la lógica correcta para reiniciar el progreso
   void _showResetConfirmationDialog() {
     showDialog(
       context: context,
@@ -56,9 +42,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Reiniciar'),
-            onPressed: () {
-              // TODO: Añadir la lógica para borrar los puntajes guardados
-              Navigator.of(ctx).pop();
+            // --- AQUÍ VA LA LÓGICA QUE ESTABA FLOTANDO ---
+            onPressed: () async { 
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('highScore_basic');
+              await prefs.remove('highScore_intermediate');
+              await prefs.remove('highScore_advanced');
+
+              // Es buena práctica verificar el contexto antes de usarlo en un async
+              if (!mounted) return;
+
+              Navigator.of(ctx).pop(); // Cierra el diálogo
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Progreso reiniciado')),
               );
@@ -93,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onSelectionChanged: (newSelection) {
                     setState(() {
                       _tempSettings.themeMode = newSelection.first;
-                      widget.onSettingsChanged(_tempSettings); // Actualiza en tiempo real
+                      widget.onSettingsChanged(_tempSettings);
                     });
                   },
                 ),
@@ -143,7 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// Widget auxiliar para crear secciones de ajustes
+// Widget auxiliar para crear secciones de ajustes (sin cambios)
 class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> tiles;
