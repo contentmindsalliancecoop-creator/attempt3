@@ -101,38 +101,52 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _buildQuiz() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            _currentQuestions[_questionIndex]['questionText'] as String,
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 32),
-            textAlign: TextAlign.center,
-          ),
+  // Reemplaza el método _buildQuiz completo en tu archivo
+
+Widget _buildQuiz() {
+  // Obtenemos el esquema de colores del tema actual
+  final colorScheme = Theme.of(context).colorScheme;
+
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Text(
+          _currentQuestions[_questionIndex]['questionText'] as String,
+          style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 32),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
-        ...(_currentQuestions[_questionIndex]['answers'] as List<Map<String, Object>>)
-            .map((answer) {
-          return Container(
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                backgroundColor: Theme.of(context).cardColor,
-                foregroundColor: Colors.white,
+      ),
+      const SizedBox(height: 40),
+      ...(_currentQuestions[_questionIndex]['answers'] as List<Map<String, Object>>)
+          .map((answer) {
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.all(20),
+              // ANTES:
+              // backgroundColor: Theme.of(context).cardColor,
+              // foregroundColor: Colors.white,
+              
+              // AHORA: Colores adaptativos del tema
+              backgroundColor: colorScheme.surfaceVariant,
+              foregroundColor: colorScheme.onSurfaceVariant,
+              
+              shape: RoundedRectangleBorder( // Añadido para bordes redondeados
+                borderRadius: BorderRadius.circular(15),
               ),
-              onPressed: () => _answerQuestion(answer['score'] as int),
-              child: Text(answer['text'] as String, style: const TextStyle(fontSize: 18)),
             ),
-          );
-        }).toList(),
-      ],
-    );
-  }
+            onPressed: () => _answerQuestion(answer['score'] as int),
+            child: Text(answer['text'] as String, style: const TextStyle(fontSize: 18)),
+          ),
+        );
+      }).toList(),
+    ],
+  );
+}
 
   Widget _buildResult() {
     _saveHighScore(); // Guardamos el puntaje al mostrar el resultado

@@ -22,7 +22,7 @@ class Updater {
 
     try {
       // 1. Construimos la URL y hacemos la petición con Dio
-      final apiUrl = 'https://api.github.com/repos/$githubUser/$githubRepo/releases/latest';
+      final apiUrl = 'https://api.github.com/repos/contentmindsalliancecoop-creator/attempt3/releases/latest';
       final response = await _dio.get(apiUrl);
 
       if (response.statusCode != 200) return;
