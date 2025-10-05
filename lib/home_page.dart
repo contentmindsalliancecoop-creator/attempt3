@@ -1,7 +1,9 @@
-// lib/home_page.dart (Versión Corregida y Unificada)
+// lib/home_page.dart (Conectado a Supabase)
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // <-- 1. Importamos Supabase
+// import 'package:shared_preferences/shared_preferences.dart'; // <-- 2. Ya no necesitamos esto
+
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
 import 'updater.dart';
@@ -22,47 +24,94 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Mapa para guardar los puntajes máximos de cada nivel
   Map<QuizLevel, int> highScores = {
     QuizLevel.basic: 0,
     QuizLevel.intermediate: 0,
     QuizLevel.advanced: 0,
   };
+  bool _isLoading = true; // Variable para mostrar un indicador de carga
 
-  // Al iniciar la pantalla, cargamos los puntajes guardados
+  // Al iniciar la pantalla, cargamos los puntajes desde Supabase
   @override
   void initState() {
     super.initState();
-    _loadHighScores();
+    _fetchHighScores();
   }
 
-  // Función para cargar los puntajes desde SharedPreferences
-  Future<void> _loadHighScores() async {
-    final prefs = await SharedPreferences.getInstance();
-    // setState actualiza la UI con los nuevos puntajes
+  // 3. Nueva función para obtener los puntajes desde Supabase
+  Future<void> _fetchHighScores() async {
     setState(() {
-      highScores[QuizLevel.basic] = prefs.getInt('highScore_basic') ?? 0;
-      highScores[QuizLevel.intermediate] = prefs.getInt('highScore_intermediate') ?? 0;
-      highScores[QuizLevel.advanced] = prefs.getInt('highScore_advanced') ?? 0;
+      _isLoading = true;
     });
+
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser!.id;
+
+      // Hacemos una consulta a la tabla 'scores' (o 'Puntajes')
+      final response = await supabase
+          .from('scores') // <-- Asegúrate que el nombre de tu tabla sea 'scores'
+          .select('level, score')
+          .eq('user_id', userId);
+
+      // Procesamos los resultados para encontrar el puntaje más alto de cada nivel
+      final scoresByLevel = {
+        QuizLevel.basic: 0,
+        QuizLevel.intermediate: 0,
+        QuizLevel.advanced: 0,
+      };
+
+      for (final row in response) {
+        final levelString = row['level'] as String;
+        final score = row['score'] as int;
+        
+        // Convertimos el texto del nivel de nuevo a nuestro enum
+        final level = QuizLevel.values.firstWhere((e) => e.name == levelString);
+        
+        // Si el puntaje de la base de datos es mayor, lo actualizamos
+        if (score > scoresByLevel[level]!) {
+          scoresByLevel[level] = score;
+        }
+      }
+      
+      if(mounted) {
+        setState(() {
+          highScores = scoresByLevel;
+        });
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar puntajes: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+       }
+    }
   }
 
-  // Función para iniciar un quiz
+  // Modificamos _startQuiz para que recargue desde Supabase al volver
   void _startQuiz(BuildContext context, QuizLevel level) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuizScreen(level: level, settings: widget.settings),
       ),
-      // Cuando volvemos de la pantalla del quiz, recargamos los puntajes
-    ).then((_) => _loadHighScores());
+    ).then((_) => _fetchHighScores()); // <-- 4. Llama a la nueva función
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: SingleChildScrollView(
+        child: _isLoading 
+        ? const CircularProgressIndicator() // Muestra un círculo de carga
+        : SingleChildScrollView(
           padding: const EdgeInsets.all(30.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -78,7 +127,7 @@ class _HomePageState extends State<HomePage> {
               Text('Selecciona tu nivel', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 20),
 
-              // Botones de menú que ahora muestran el puntaje
+              // Botones de menú
               _MenuButton(
                 text: 'Básico',
                 subtitle: 'Puntaje Máximo: ${highScores[QuizLevel.basic]}',
@@ -104,8 +153,9 @@ class _HomePageState extends State<HomePage> {
               const Divider(),
               const SizedBox(height: 20),
 
+              // 5. Fila de botones con el nuevo botón de "Cerrar Sesión"
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.settings_rounded, size: 30),
@@ -122,7 +172,14 @@ class _HomePageState extends State<HomePage> {
                     },
                     tooltip: 'Ajustes',
                   ),
-                  const SizedBox(width: 40),
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, size: 30),
+                    onPressed: () async {
+                      // Cierra la sesión del usuario en Supabase
+                      await Supabase.instance.client.auth.signOut();
+                    },
+                    tooltip: 'Cerrar Sesión',
+                  ),
                   IconButton(
                     icon: const Icon(Icons.system_update_rounded, size: 30),
                     onPressed: () {
@@ -140,10 +197,10 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Widget de botón personalizado (SOLO UNO)
+// El widget _MenuButton se queda exactamente igual
 class _MenuButton extends StatelessWidget {
   final String text;
-  final String? subtitle; // Subtítulo opcional para el puntaje
+  final String? subtitle;
   final IconData icon;
   final VoidCallback onPressed;
 
@@ -156,12 +213,11 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos un tema específico para el botón para asegurar que el texto sea visible
     final buttonStyle = ElevatedButton.styleFrom(
       minimumSize: const Size(280, 60),
       textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      backgroundColor: Theme.of(context).colorScheme.surfaceVariant, // Color de fondo adaptable
-      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant, // Color de texto adaptable
+      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),

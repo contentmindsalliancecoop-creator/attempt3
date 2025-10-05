@@ -1,9 +1,11 @@
-// lib/main.dart (Código Completo y Corregido)
+// lib/main.dart (Código con Gestión de Sesión)
 
 import 'package:flutter/material.dart';
-import 'home_page.dart'; // Importamos la pantalla de inicio
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'home_page.dart';
+import 'auth_screen.dart'; // <-- 1. Importamos la nueva pantalla de autenticación
 
-// 1. Clase para guardar todos los ajustes de la aplicación.
+// La clase SettingsData se queda igual.
 class SettingsData {
   ThemeMode themeMode;
   bool soundEffectsEnabled;
@@ -15,7 +17,6 @@ class SettingsData {
     this.vibrationsEnabled = true,
   });
 
-  // Método para crear una copia de los ajustes con valores modificados.
   SettingsData copyWith({
     ThemeMode? themeMode,
     bool? soundEffectsEnabled,
@@ -29,25 +30,45 @@ class SettingsData {
   }
 }
 
-// Punto de entrada de la aplicación.
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://hynyyyxsphvsmngratav.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5bXJ5eXhzcGh2c21uZ3JhdGF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MzU3NTksImV4cCI6MjA3NTIxMTc1OX0.-IhFrWHAZRwKnC6j-r7H40DtFTYC8Qa4YJw29irTvvI',
+  );
+  
   runApp(const MathQuizApp());
 }
 
-// 2. Widget principal, convertido a StatefulWidget para manejar el estado.
-class MathQuizApp extends StatefulWidget {
+// 2. MathQuizApp ahora es más simple. Solo define el punto de entrada.
+class MathQuizApp extends StatelessWidget {
   const MathQuizApp({super.key});
 
   @override
-  State<MathQuizApp> createState() => _MathQuizAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'Misión Matemática',
+      debugShowCheckedModeBanner: false,
+      home: AuthManager(), // <-- 3. Nuestro nuevo widget que gestionará la sesión
+    );
+  }
 }
 
-class _MathQuizAppState extends State<MathQuizApp> {
-  // 3. Aquí se guarda el estado de los ajustes para toda la app.
+// 4. Este widget se convierte en el cerebro de la app.
+// Escuchará los cambios de autenticación (login/logout).
+class AuthManager extends StatefulWidget {
+  const AuthManager({super.key});
+
+  @override
+  State<AuthManager> createState() => _AuthManagerState();
+}
+
+class _AuthManagerState extends State<AuthManager> {
+  // Movemos la lógica de los ajustes aquí, ya que este widget
+  // ahora es el padre de la HomePage.
   SettingsData _settings = SettingsData();
 
-  // 4. Función que permite a otras pantallas (como SettingsScreen)
-  // cambiar los ajustes del estado principal.
   void _updateSettings(SettingsData newSettings) {
     setState(() {
       _settings = newSettings;
@@ -56,37 +77,48 @@ class _MathQuizAppState extends State<MathQuizApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Misión Matemática',
-      // Desactiva el banner de "Debug" en la esquina.
-      debugShowCheckedModeBanner: false,
+    // StreamBuilder es un widget que se reconstruye automáticamente
+    // cada vez que hay un cambio en el estado de la sesión de Supabase.
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        // Mientras espera la primera respuesta, muestra una pantalla de carga.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
 
-      // Usa los ajustes guardados para controlar el tema.
-      themeMode: _settings.themeMode,
+        // Si el snapshot tiene datos y una sesión activa, el usuario está logueado.
+        if (snapshot.hasData && snapshot.data?.session != null) {
+          // Mostramos la app principal (HomePage) con su propio MaterialApp
+          // para que pueda manejar los temas correctamente.
+          return MaterialApp(
+             title: 'Misión Matemática',
+             debugShowCheckedModeBanner: false,
+             themeMode: _settings.themeMode,
+             theme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.light,
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan)
+              ),
+             darkTheme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.dark,
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan, brightness: Brightness.dark)
+              ),
+             home: HomePage(
+                settings: _settings,
+                onSettingsChanged: _updateSettings,
+             ),
+          );
+        }
 
-      // TEMA CLARO
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
-      ),
-
-      // TEMA OSCURO
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.cyan,
-          brightness: Brightness.dark,
-        ),
-      ),
-
-      // Pantalla de inicio de la aplicación.
-      // Le pasamos los ajustes actuales y la función para actualizarlos.
-      home: HomePage(
-        settings: _settings,
-        onSettingsChanged: _updateSettings,
-      ),
+        // Si no hay sesión, mostramos la pantalla de autenticación.
+        return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: AuthScreen()
+        );
+      },
     );
   }
 }
+
