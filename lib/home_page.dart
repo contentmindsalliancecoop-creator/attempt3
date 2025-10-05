@@ -1,313 +1,201 @@
-// lib/quiz_screen.dart (Versión final conectada a Supabase)
+// lib/home_page.dart (CÓDIGO COMPLETO Y CORREGIDO)
 
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'settings_data.dart'; // Para SettingsData
+import 'quiz_screen.dart';
+import 'settings_screen.dart';
+import 'updater.dart';
+import 'settings_data.dart'; // <-- CAMBIO CLAVE: Importación correcta
 
-
-
-// El enum no cambia
-enum QuizLevel { basic, intermediate, advanced }
-
-class QuizScreen extends StatefulWidget {
-  final QuizLevel level;
+class HomePage extends StatefulWidget {
   final SettingsData settings;
+  final Function(SettingsData) onSettingsChanged;
 
-  const QuizScreen({super.key, required this.level, required this.settings});
+  const HomePage({
+    super.key,
+    required this.settings,
+    required this.onSettingsChanged,
+  });
 
   @override
-  State<QuizScreen> createState() => _QuizScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
-  // Variables de estado del juego
-  int? _num1, _num2, _correctAnswer;
-  String _operator = '+';
-  int _score = 0;
-  int _questionCount = 0;
-  final int _totalQuestions = 10;
-  final _answerController = TextEditingController();
-  final _random = Random();
-  Timer? _timer;
-  int _timeLeft = 10;
-  bool _isGameFinished = false;
+class _HomePageState extends State<HomePage> {
+  Map<String, int> highScores = {
+    'basic': 0,
+    'intermediate': 0,
+    'advanced': 0,
+  };
 
   @override
   void initState() {
     super.initState();
-    _startNewGame(widget.level);
+    _loadHighScores();
   }
 
-  void _startNewGame(QuizLevel level) {
-    setState(() {
-      _score = 0;
-      _questionCount = 0;
-      _isGameFinished = false;
-    });
-    _generateQuestion(level);
-  }
+  Future<void> _loadHighScores() async {
+    // Lógica para cargar puntajes desde Supabase
+    try {
+      final userId = Supabase.instance.client.auth.currentUser!.id;
+      final response = await Supabase.instance.client
+          .from('scores')
+          .select('level, score')
+          .eq('user_id', userId);
 
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() {
-      _timeLeft = 10;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_timeLeft > 0) {
-        setState(() {
-          _timeLeft--;
-        });
-      } else {
-        _checkAnswer(isTimeUp: true);
-      }
-    });
-  }
-
-  void _generateQuestion(QuizLevel level) {
-    setState(() {
-      int maxNum;
-      switch (level) {
-        case QuizLevel.basic:
-          maxNum = 10;
-          _operator = '+';
-          break;
-        case QuizLevel.intermediate:
-          maxNum = 20;
-          _operator = ['+', '-'][_random.nextInt(2)];
-          break;
-        case QuizLevel.advanced:
-          maxNum = 30;
-          _operator = ['+', '-', '*'][_random.nextInt(3)];
-          break;
-      }
-
-      _num1 = _random.nextInt(maxNum) + 1;
-      _num2 = _random.nextInt(maxNum) + 1;
-
-      if (_operator == '-') {
-        if (_num1! < _num2!) {
-          final temp = _num1;
-          _num1 = _num2;
-          _num2 = temp;
+      final Map<String, int> loadedScores = {};
+      for (var record in response) {
+        final level = record['level'] as String;
+        final score = record['score'] as int;
+        if ((loadedScores[level] ?? 0) < score) {
+          loadedScores[level] = score;
         }
       }
-
-      switch (_operator) {
-        case '+':
-          _correctAnswer = _num1! + _num2!;
-          break;
-        case '-':
-          _correctAnswer = _num1! - _num2!;
-          break;
-        case '*':
-          _num1 = _random.nextInt(10) + 1;
-          _num2 = _random.nextInt(10) + 1;
-          _correctAnswer = _num1! * _num2!;
-          break;
-      }
-    });
-    _startTimer();
-  }
-
-  void _checkAnswer({bool isTimeUp = false}) {
-    _timer?.cancel();
-    int? userAnswer = int.tryParse(_answerController.text);
-
-    if (!isTimeUp && userAnswer == _correctAnswer) {
       setState(() {
-        _score++;
-      });
-    }
-
-    _answerController.clear();
-    _questionCount++;
-
-    if (_questionCount < _totalQuestions) {
-      _generateQuestion(widget.level);
-    } else {
-      _saveScoreAndEndGame();
-    }
-  }
-
-  Future<void> _saveScoreAndEndGame() async {
-    setState(() {
-      _isGameFinished = true; // Mostramos la pantalla final
-    });
-
-    try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser!.id;
-
-      await supabase.from('scores').insert({
-        'user_id': userId,
-        'level': widget.level.name,
-        'score': _score,
+        highScores['basic'] = loadedScores['basic'] ?? 0;
+        highScores['intermediate'] = loadedScores['intermediate'] ?? 0;
+        highScores['advanced'] = loadedScores['advanced'] ?? 0;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error al guardar puntaje: $e'),
-              backgroundColor: Colors.red),
-        );
-      }
+      // Manejar error si no se pueden cargar los puntajes
     }
-  }
-  
-  void _startNextLevel() {
-    QuizLevel nextLevel;
-    if (widget.level == QuizLevel.basic) {
-        nextLevel = QuizLevel.intermediate;
-    } else if (widget.level == QuizLevel.intermediate) {
-        nextLevel = QuizLevel.advanced;
-    } else {
-        return; // No hay siguiente nivel
-    }
-    
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => QuizScreen(level: nextLevel, settings: widget.settings),
-      ),
-    );
   }
 
-  @override
-  void dispose() {
-    _answerController.dispose();
-    _timer?.cancel();
-    super.dispose();
+  void _startQuiz(BuildContext context, QuizLevel level) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizScreen(level: level, settings: widget.settings),
+      ),
+    ).then((_) => _loadHighScores());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Nivel ${widget.level.name.capitalize()}'),
-        leading: BackButton(onPressed: () {
-          _timer?.cancel();
-          Navigator.of(context).pop();
-        }),
-      ),
-      body: _isGameFinished
-          ? _QuizEndScreen(
-              score: _score,
-              totalQuestions: _totalQuestions,
-              level: widget.level,
-              onRetry: () => _startNewGame(widget.level),
-              onNextLevel: _startNextLevel,
-              onBackToMenu: () => Navigator.of(context).pop(),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.calculate_rounded, size: 80),
+              const SizedBox(height: 10),
+              Text(
+                'Misión Matemática',
+                style: Theme.of(context).textTheme.displayMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              _MenuButton(
+                text: 'Básico',
+                subtitle: 'Puntaje Máximo: ${highScores['basic']}',
+                icon: Icons.filter_1,
+                onPressed: () => _startQuiz(context, QuizLevel.basic),
+              ),
+              const SizedBox(height: 20),
+              _MenuButton(
+                text: 'Intermedio',
+                subtitle: 'Puntaje Máximo: ${highScores['intermediate']}',
+                icon: Icons.filter_2,
+                onPressed: () => _startQuiz(context, QuizLevel.intermediate),
+              ),
+              const SizedBox(height: 20),
+              _MenuButton(
+                text: 'Avanzado',
+                subtitle: 'Puntaje Máximo: ${highScores['advanced']}',
+                icon: Icons.filter_3,
+                onPressed: () => _startQuiz(context, QuizLevel.advanced),
+              ),
+              const SizedBox(height: 40),
+              const Divider(),
+              const SizedBox(height: 20),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Pregunta ${_questionCount + 1} / $_totalQuestions',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 20),
-                  Text('$_num1 $_operator $_num2 = ?',
-                      style: Theme.of(context).textTheme.displayMedium),
-                  const SizedBox(height: 20),
-                  Text('Tiempo restante: $_timeLeft',
-                      style: const TextStyle(fontSize: 18, color: Colors.red)),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _answerController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 24),
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Tu respuesta',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _checkAnswer(),
+                  IconButton(
+                    icon: const Icon(Icons.settings_rounded, size: 30),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SettingsScreen(
+                            currentSettings: widget.settings,
+                            onSettingsChanged: widget.onSettingsChanged,
+                          ),
+                        ),
+                      );
+                    },
+                    tooltip: 'Ajustes',
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => _checkAnswer(),
-                    child: const Text('Enviar'),
+                  const SizedBox(width: 40),
+                  IconButton(
+                    icon: const Icon(Icons.system_update_rounded, size: 30),
+                    onPressed: () {
+                      Updater('contentmindsalliancecoop-creator', 'attempt3').check(context);
+                    },
+                    tooltip: 'Buscar Actualizaciones',
+                  ),
+                  const SizedBox(width: 40),
+                  IconButton(
+                    icon: const Icon(Icons.logout, size: 30),
+                    onPressed: () async {
+                      await Supabase.instance.client.auth.signOut();
+                    },
+                    tooltip: 'Cerrar Sesión',
                   ),
                 ],
-              ),
-            ),
-    );
-  }
-}
-
-// NUEVO WIDGET PARA LA PANTALLA FINAL
-class _QuizEndScreen extends StatelessWidget {
-  final int score;
-  final int totalQuestions;
-  final QuizLevel level;
-  final VoidCallback onRetry;
-  final VoidCallback onNextLevel;
-  final VoidCallback onBackToMenu;
-
-  const _QuizEndScreen({
-    required this.score,
-    required this.totalQuestions,
-    required this.level,
-    required this.onRetry,
-    required this.onNextLevel,
-    required this.onBackToMenu,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
-            const SizedBox(height: 20),
-            Text(
-              '¡Juego Completado!',
-              style: Theme.of(context).textTheme.displaySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Tu puntuación: $score / $totalQuestions',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar Nivel'),
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(minimumSize: const Size(220, 50)),
-            ),
-            const SizedBox(height: 15),
-            // Solo mostramos "Siguiente Nivel" si no estamos en el avanzado
-            if (level != QuizLevel.advanced)
-              ElevatedButton.icon(
-                icon: const Icon(Icons.skip_next_rounded),
-                label: const Text('Siguiente Nivel'),
-                onPressed: onNextLevel,
-                style: ElevatedButton.styleFrom(minimumSize: const Size(220, 50)),
-              ),
-            const SizedBox(height: 15),
-            TextButton.icon(
-              icon: const Icon(Icons.menu),
-              label: const Text('Volver al Menú'),
-              onPressed: onBackToMenu,
-            ),
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Extensión para capitalizar la primera letra
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
+// Widget de botón personalizado (sin cambios)
+class _MenuButton extends StatelessWidget {
+  final String text;
+  final String? subtitle;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _MenuButton({
+    required this.text,
+    this.subtitle,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonStyle = ElevatedButton.styleFrom(
+      minimumSize: const Size(280, 60),
+      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+    );
+
+    return ElevatedButton.icon(
+      icon: Icon(icon, size: 28),
+      style: buttonStyle,
+      label: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(text),
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+            ),
+        ],
+      ),
+      onPressed: onPressed,
+    );
   }
 }
-
