@@ -1,9 +1,9 @@
-// lib/main.dart (Código con Gestión de Sesión)
+// lib/main.dart (Versión con la importación corregida)
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home_page.dart';
-import 'auth_screen.dart'; // <-- 1. Importamos la nueva pantalla de autenticación
+import 'home_page.dart'; // <-- ¡ESTA ES LA LÍNEA QUE FALTABA!
+import 'auth_screen.dart';
 
 // La clase SettingsData se queda igual.
 class SettingsData {
@@ -31,17 +31,19 @@ class SettingsData {
 }
 
 Future<void> main() async {
+  // Indispensable para asegurar que los plugins se inicialicen.
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inicializamos Supabase con la URL y la clave correctas.
   await Supabase.initialize(
     url: 'https://hynyyyxsphvsmngratav.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5bXJ5eXhzcGh2c21uZ3JhdGF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MzU3NTksImV4cCI6MjA3NTIxMTc1OX0.-IhFrWHAZRwKnC6j-r7H40DtFTYC8Qa4YJw29irTvvI',
   );
-  
+
   runApp(const MathQuizApp());
 }
 
-// 2. MathQuizApp ahora es más simple. Solo define el punto de entrada.
+// MathQuizApp ahora es más simple. Solo define el punto de entrada.
 class MathQuizApp extends StatelessWidget {
   const MathQuizApp({super.key});
 
@@ -50,13 +52,12 @@ class MathQuizApp extends StatelessWidget {
     return const MaterialApp(
       title: 'Misión Matemática',
       debugShowCheckedModeBanner: false,
-      home: AuthManager(), // <-- 3. Nuestro nuevo widget que gestionará la sesión
+      home: AuthManager(), // Nuestro widget que gestionará la sesión
     );
   }
 }
 
-// 4. Este widget se convierte en el cerebro de la app.
-// Escuchará los cambios de autenticación (login/logout).
+// Este widget se convierte en el cerebro de la app.
 class AuthManager extends StatefulWidget {
   const AuthManager({super.key});
 
@@ -65,8 +66,6 @@ class AuthManager extends StatefulWidget {
 }
 
 class _AuthManagerState extends State<AuthManager> {
-  // Movemos la lógica de los ajustes aquí, ya que este widget
-  // ahora es el padre de la HomePage.
   SettingsData _settings = SettingsData();
 
   void _updateSettings(SettingsData newSettings) {
@@ -77,20 +76,18 @@ class _AuthManagerState extends State<AuthManager> {
 
   @override
   Widget build(BuildContext context) {
-    // StreamBuilder es un widget que se reconstruye automáticamente
-    // cada vez que hay un cambio en el estado de la sesión de Supabase.
+    // Usamos un StreamBuilder para escuchar los cambios de autenticación
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        // Mientras espera la primera respuesta, muestra una pantalla de carga.
+        // Mientras esperamos la primera respuesta, mostramos un spinner.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // Si el snapshot tiene datos y una sesión activa, el usuario está logueado.
+        // Si hay datos de sesión, el usuario está logueado.
         if (snapshot.hasData && snapshot.data?.session != null) {
-          // Mostramos la app principal (HomePage) con su propio MaterialApp
-          // para que pueda manejar los temas correctamente.
+          // Mostramos la app principal con sus temas y configuraciones.
           return MaterialApp(
              title: 'Misión Matemática',
              debugShowCheckedModeBanner: false,
@@ -112,7 +109,7 @@ class _AuthManagerState extends State<AuthManager> {
           );
         }
 
-        // Si no hay sesión, mostramos la pantalla de autenticación.
+        // Si no hay sesión, mostramos la pantalla de login.
         return const MaterialApp(
             debugShowCheckedModeBanner: false,
             home: AuthScreen()

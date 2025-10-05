@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'main.dart'; // Para tener acceso a la clase SettingsData
+import 'settings_data.dart'; // Para tener acceso a la clase SettingsData
 
 enum QuizLevel { basic, intermediate, advanced }
 

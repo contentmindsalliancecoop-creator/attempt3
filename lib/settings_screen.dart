@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main.dart'; // Importamos para tener acceso a la clase SettingsData
+import 'settings_data.dart'; // Importamos para tener acceso a la clase SettingsData
 
 class SettingsScreen extends StatefulWidget {
   final SettingsData currentSettings;
