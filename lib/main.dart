@@ -14,7 +14,7 @@ Future<void> main() async {
 
   // Inicializa Supabase con tus credenciales.
   await Supabase.initialize(
-    url: 'https://hynyyyxsphvsmngratav.supabase.co',
+    url: 'https://hymryyxsphvsmngratav.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5bXJ5eXhzcGh2c21uZ3JhdGF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MzU3NTksImV4cCI6MjA3NTIxMTc1OX0.-IhFrWHAZRwKnC6j-r7H40DtFTYC8Qa4YJw29irTvvI',
   );
 
