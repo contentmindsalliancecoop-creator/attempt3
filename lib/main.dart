@@ -1,40 +1,18 @@
-// lib/main.dart (Versión con la importación corregida)
+// lib/main.dart (Versión Final Reestructurada)
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home_page.dart'; // <-- ¡ESTA ES LA LÍNEA QUE FALTABA!
-import 'auth_screen.dart';
+import 'home_page.dart';       // <-- Importa HomePage
+import 'auth_screen.dart';      // <-- Importa AuthScreen
+import 'settings_data.dart';    // <-- Importa la clase SettingsData desde su propio archivo
 
-// La clase SettingsData se queda igual.
-class SettingsData {
-  ThemeMode themeMode;
-  bool soundEffectsEnabled;
-  bool vibrationsEnabled;
-
-  SettingsData({
-    this.themeMode = ThemeMode.system,
-    this.soundEffectsEnabled = true,
-    this.vibrationsEnabled = true,
-  });
-
-  SettingsData copyWith({
-    ThemeMode? themeMode,
-    bool? soundEffectsEnabled,
-    bool? vibrationsEnabled,
-  }) {
-    return SettingsData(
-      themeMode: themeMode ?? this.themeMode,
-      soundEffectsEnabled: soundEffectsEnabled ?? this.soundEffectsEnabled,
-      vibrationsEnabled: vibrationsEnabled ?? this.vibrationsEnabled,
-    );
-  }
-}
+// La clase SettingsData ya no está definida en este archivo.
 
 Future<void> main() async {
-  // Indispensable para asegurar que los plugins se inicialicen.
+  // Asegura que los bindings de Flutter estén listos.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializamos Supabase con la URL y la clave correctas.
+  // Inicializa Supabase con tus credenciales.
   await Supabase.initialize(
     url: 'https://hynyyyxsphvsmngratav.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5bXJ5eXhzcGh2c21uZ3JhdGF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MzU3NTksImV4cCI6MjA3NTIxMTc1OX0.-IhFrWHAZRwKnC6j-r7H40DtFTYC8Qa4YJw29irTvvI',
@@ -43,21 +21,22 @@ Future<void> main() async {
   runApp(const MathQuizApp());
 }
 
-// MathQuizApp ahora es más simple. Solo define el punto de entrada.
+// El widget raíz de la aplicación.
 class MathQuizApp extends StatelessWidget {
   const MathQuizApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // MaterialApp inicial que solo apunta al gestor de autenticación.
     return const MaterialApp(
       title: 'Misión Matemática',
       debugShowCheckedModeBanner: false,
-      home: AuthManager(), // Nuestro widget que gestionará la sesión
+      home: AuthManager(),
     );
   }
 }
 
-// Este widget se convierte en el cerebro de la app.
+// Este widget gestiona el estado de la sesión (si el usuario está logueado o no).
 class AuthManager extends StatefulWidget {
   const AuthManager({super.key});
 
@@ -66,8 +45,10 @@ class AuthManager extends StatefulWidget {
 }
 
 class _AuthManagerState extends State<AuthManager> {
+  // El estado de los ajustes vive aquí.
   SettingsData _settings = SettingsData();
 
+  // Función para actualizar los ajustes desde otras pantallas.
   void _updateSettings(SettingsData newSettings) {
     setState(() {
       _settings = newSettings;
@@ -76,18 +57,17 @@ class _AuthManagerState extends State<AuthManager> {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos un StreamBuilder para escuchar los cambios de autenticación
+    // Escucha los cambios en el estado de autenticación de Supabase.
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        // Mientras esperamos la primera respuesta, mostramos un spinner.
+        // Muestra un indicador de carga mientras se verifica la sesión.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // Si hay datos de sesión, el usuario está logueado.
+        // Si hay una sesión activa, muestra la aplicación principal.
         if (snapshot.hasData && snapshot.data?.session != null) {
-          // Mostramos la app principal con sus temas y configuraciones.
           return MaterialApp(
              title: 'Misión Matemática',
              debugShowCheckedModeBanner: false,
@@ -102,6 +82,7 @@ class _AuthManagerState extends State<AuthManager> {
                 brightness: Brightness.dark,
                 colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan, brightness: Brightness.dark)
               ),
+             // Llama a HomePage y le pasa los ajustes.
              home: HomePage(
                 settings: _settings,
                 onSettingsChanged: _updateSettings,
@@ -109,7 +90,7 @@ class _AuthManagerState extends State<AuthManager> {
           );
         }
 
-        // Si no hay sesión, mostramos la pantalla de login.
+        // Si no hay sesión, muestra la pantalla de login/registro.
         return const MaterialApp(
             debugShowCheckedModeBanner: false,
             home: AuthScreen()
@@ -118,4 +99,3 @@ class _AuthManagerState extends State<AuthManager> {
     );
   }
 }
-
